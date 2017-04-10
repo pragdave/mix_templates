@@ -132,6 +132,7 @@ Wander into the directory that is created:
   end
     
   def find(name) when is_atom(name) do
+    IO.inspect "new version"
     Cache.find(name)
   end
   
