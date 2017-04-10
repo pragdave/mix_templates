@@ -1,11 +1,18 @@
 defmodule MixTemplates do
 
 @moduledoc """
+
+> NOTE: This documentation is intended for folks who want to write
+> their own templates. If you just want to use a template, then
+> have a look at the README, or try `mix help template` and 
+> `mix help gen`.
+
+
 This is the engine that supports templated directory trees.
 
 A template is a trivial mix project. It contains a single source file
 in `lib` that contains metadata and option parsing. It also contains a
-top-level directpry called `template`. The directories and files
+top-level directory called `template`. The directories and files
 underneath `template/` copied to the destination location. 
 
 The copying function tasks a map containing key-value pairs. This is
@@ -20,7 +27,7 @@ defmodule <%= @project_name_camel_case %>.Mixfile do
   @version "0.1.0"
 
 
-The `<%= ... %>` constructs are expanded using the passed in map.
+The `<%= ... %>` constructs are expanded using the passed-in map.
 
 In addition, the template looks for the string `$PROJECT_NAME\$` in the
 _names_ of files and directories. It replaces each occurrence with the
@@ -41,46 +48,26 @@ Thus the directory structure for a standard Elixir project might be:
     │       └── test_helper.exs
     └── templates_project.ex
 
-## Usage
+## Write a Template
 
-Although MixTemplates provides a programmatic API for finding, listing, and
-installing templates, it is normally invoked via mix tasks. The
-templates themselves are managed by the `mix template` task.
-Generating projects using them is controlled by `mix gen`.
-
-Templates must be installed before use. This is done using the `mix
-template` task.
-
-* mix template
-
-  * `mix template [list]`
-
-    List the locally installed templates.
-
-  * `mix template hex`
-
-    List the templates available on hex.
-
-  * `mix template install «source»`
-
-    Install a template from source.
-
-  * `mix template uninstall «name»`
-
-    Uninstall the template with the given name.
-
-  The «source» can be
-
-  * the name of a Hex project containing the template
-
-  * a local file path (starting with a `.` or `/`)
-
-  Templates are installed in MIX_HOME/templates (by default ~/.mix/templates).    
-
-## Installation
+Make sure you have the underlying tools installed:
 
     $ mix archive.install hex mix_templates
-    $ mix archive.install hex mix_task_gen
+    $ mix archive.install hex mix_generator
+
+Then install the template for templates (yup :).
+
+    $ mix template.install hex gen_template_template
+
+Now create your template project:
+
+    $ mix gen template «your-template-name»
+
+Wander into the directory that is created:
+
+    $ cd «your project name»
+    $ tree
+
 
 
 
@@ -139,23 +126,12 @@ template` task.
     end
   end
 
-  # def known_templates do
-  #   :code.all_loaded
-  #   |> Enum.map(fn {module, _path} -> module |> Atom.to_string end)
-  #   |> Enum.filter(&atom_starts_with(&1, "Elixir.Mix.Gen.Template."))
-  #   |> IO.inspect
-  #   |> Enum.map(fn module ->
-  #     { :module, module } = module |> String.to_atom() |> Code.ensure_loaded()
-  #     module
-  #   end)
-  # end
-
   def find(name)
   when is_binary(name) do
     name |> String.to_atom |> find
   end
     
-  def find(name) do
+  def find(name) when is_atom(name) do
     Cache.find(name)
   end
   

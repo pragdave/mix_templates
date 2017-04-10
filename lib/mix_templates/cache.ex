@@ -60,6 +60,23 @@ defmodule MixTemplates.Cache do
         nil
     end
   end
+
+  @doc """
+  Given the path to a project containing a template, load the file 
+  in lib/ and return its Module
+  """
+  def load_template_module(path) do
+    with_no_warnings(fn ->
+      path
+      |> Path.join("lib/*.ex")
+      |> Path.wildcard
+      |> hd
+      |> Code.load_file
+      |> hd
+      |> elem(0)
+    end)
+  end
+
   
   private do
     defp template_dir() do
@@ -83,18 +100,6 @@ defmodule MixTemplates.Cache do
       [ dir, "template" ]
       |> Path.join
       |> File.dir?
-    end
-
-    defp load_template_module(path) do
-      with_no_warnings(fn ->
-        path
-        |> Path.join("lib/*.ex")
-        |> Path.wildcard
-        |> hd
-        |> Code.load_file
-        |> hd
-        |> elem(0)
-      end)
     end
 
     defp with_no_warnings(code) do

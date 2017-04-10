@@ -3,15 +3,6 @@ defmodule TemplatesTest do
   alias MixTemplates,       as: MT
   alias MixTemplates.Cache
   
-  def unload_templates() do
-    # :code.delete(Templates.One)
-    # :code.delete(Templates.Two)
-    # :code.purge(Templates.One)
-    # :code.purge(Templates.Two)
-    # Code.unload_files(["data/templates/templates_one.ex",
-    #                    "data/templates/templates_two.ex"])
-  end
-
   def load_templates(list) when is_list(list) do
     Enum.each(list, &load_templates/1)
   end
@@ -21,22 +12,9 @@ defmodule TemplatesTest do
     |> Cache.install_from_local_tree
   end
   
-  # test "load from directory works" do
-  #   unload_templates()    # not loaded yet
-  # 
-  #   assert function_exported?(Templates.One, :__info__, 1) == false
-  #   assert function_exported?(Templates.Two, :__info__, 1) == false
-  # 
-  #   Templates.load_templates(Path.join([__DIR__, "data"]))
-  # 
-  #   assert function_exported?(Templates.One, :__info__, 1) == true    
-  #   assert function_exported?(Templates.Two, :__info__, 1) == true    
-  # end
-  # 
   describe "templates" do
   
     setup do
-      unload_templates()
       load_templates(["one", "two"])
       :ok
     end
@@ -49,7 +27,7 @@ defmodule TemplatesTest do
     end
   
     test "know their source directory" do
-      template = MT.find(:one)
+      assert template = MT.find(:one)
       dir = template.source_dir
       assert String.starts_with?(dir, Mix.Utils.mix_home)
       assert String.ends_with?(dir, "/template/$PROJECT_NAME$")

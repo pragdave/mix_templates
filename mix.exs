@@ -9,15 +9,14 @@ defmodule MixTemplates.Mixfile do
   ]
 
   @description """
-  A modular, open templating system. It's designed for use with 
-  `mix gen`, but could probably be used elsewhere. 
+  A modular, open templating system, designed for use with `mix gen`.
 
   You care about this if:
 
-  ① you'd like to use project templates other than the ones built in to mix, 
+  ① you'd like different templates than the ones built in to mix, 
   ② you'd like to create your own templates, or 
-  ③ you have created a package such as Phoenix or Nerves that need their 
-     own project setup.
+  ③ you have created a package such as Phoenix or Nerves that needs
+     its own project setup.
   """
   
   ############################################################
