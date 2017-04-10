@@ -1,50 +1,64 @@
 defmodule TemplatesTest do
   use ExUnit.Case
-  alias MixTemplates, as: Templates
+  alias MixTemplates,       as: MT
+  alias MixTemplates.Cache
   
   def unload_templates() do
-    :code.delete(Templates.One)
-    :code.delete(Templates.Two)
-    :code.purge(Templates.One)
-    :code.purge(Templates.Two)
-    Code.unload_files(["data/templates/templates_one.ex",
-                       "data/templates/templates_two.ex"])
+    # :code.delete(Templates.One)
+    # :code.delete(Templates.Two)
+    # :code.purge(Templates.One)
+    # :code.purge(Templates.Two)
+    # Code.unload_files(["data/templates/templates_one.ex",
+    #                    "data/templates/templates_two.ex"])
+  end
+
+  def load_templates(list) when is_list(list) do
+    Enum.each(list, &load_templates/1)
   end
   
-  test "load from directory works" do
-    unload_templates()    # not loaded yet
-
-    assert function_exported?(Templates.One, :__info__, 1) == false
-    assert function_exported?(Templates.Two, :__info__, 1) == false
-
-    Templates.load_templates(Path.join([__DIR__, "data"]))
-
-    assert function_exported?(Templates.One, :__info__, 1) == true    
-    assert function_exported?(Templates.Two, :__info__, 1) == true    
+  def load_templates(src) do
+    Path.join([__DIR__, "../test_templates", src])
+    |> Cache.install_from_local_tree
   end
-
+  
+  # test "load from directory works" do
+  #   unload_templates()    # not loaded yet
+  # 
+  #   assert function_exported?(Templates.One, :__info__, 1) == false
+  #   assert function_exported?(Templates.Two, :__info__, 1) == false
+  # 
+  #   Templates.load_templates(Path.join([__DIR__, "data"]))
+  # 
+  #   assert function_exported?(Templates.One, :__info__, 1) == true    
+  #   assert function_exported?(Templates.Two, :__info__, 1) == true    
+  # end
+  # 
   describe "templates" do
-
+  
     setup do
       unload_templates()
-      Templates.load_templates(Path.join([__DIR__, "data"]))
+      load_templates(["one", "two"])
+      :ok
     end
     
-    test "are added to registry" do
-      registered = Templates.registered_templates()
-      assert length(registered) == 2
-      assert :one in registered
-      assert :two in registered
+    test "are added to the cache" do
+      assert template = MT.find(:one)
+      assert template.name == :one      
+      assert template = MT.find(:two)
+      assert template.name == :two      
     end
-
+  
     test "know their source directory" do
-      assert Templates.One.source_dir == Path.join(__DIR__, "data/templates/$PROJECT_NAME$")
+      template = MT.find(:one)
+      dir = template.source_dir
+      assert String.starts_with?(dir, Mix.Utils.mix_home)
+      assert String.ends_with?(dir, "/template/$PROJECT_NAME$")
     end
   end
-
+  
   describe "check for existing target" do
-    import Templates
-
+    import MixTemplates
+  
     @target                Path.join(__DIR__, "_target")
     @existing_project      "project"
     @existing_project_path Path.join(@target, @existing_project)
@@ -66,57 +80,57 @@ defmodule TemplatesTest do
         File.rmdir!(@target)
       end
     end
-
+  
     test "fails if target dir doesn't exist" do
       assert { :error, msg } = check_existence_of("nonexistent", "name")
       assert String.contains?(msg, "does not exist")
     end
-
+  
     test "fails if target exists but isn't a directory" do
       assert { :error, msg } = check_existence_of(@nonfile_target, "name")
       assert msg == "'#{@nonfile_target}' is not a directory"
     end
-
+  
     test "fails if project exists but is not a directory" do
       assert { :error, msg } = check_existence_of(@target, @existing_file)
       assert msg == "'#{@existing_file_path}' exists but is not a directory"
     end
-
+  
     test "flags an existing project" do
       assert { :maybe_update, @existing_project_path } = check_existence_of(@target, @existing_project)
     end
-
+  
     test "flags a new project" do
       assert { :need_to_create, @new_project_path } = check_existence_of(@target, @new_project)
     end
   end
-
+  
   test "merging projects not supported" do
-    assert { :error, msg } = Templates.create_or_merge({:maybe_update, "a"}, "b", "c")
+    assert { :error, msg } = MT.create_or_merge({:maybe_update, "a"}, "b", "c")
     assert msg == "Updating an existing project is not yet supported"
   end
-
-
+  
+  
   test "can copy a file and expand the content" do
     assigns = %{ one: "number 1", two: "deux" }
     source  = "_in"
     dest    = "_out"
     File.write!(source, "first: <%= @one %>\nsecond: <%= @two %>")
-    Templates.copy_and_expand(source, dest, assigns: assigns)
+    MT.copy_and_expand(source, dest, assigns: assigns)
     result = File.read!(dest)
     File.rm_rf!(source)
     File.rm_rf!(dest)
     assert result == "first: number 1\nsecond: deux"
   end
-
+  
   test "renames a target file if its name is $PROJECT_NAME$" do
     assigns = %{ one: "number 1", two: "deux", project_name: "fred" }
     source  = Path.join([__DIR__, "data/tree1/$PROJECT_NAME$"])
     dest    = "_out"
-    Templates.copy_dir(source, dest, assigns: assigns)
+    MT.copy_dir(source, dest, assigns: assigns)
     assert File.exists?("_out/lib/fred.ex")
     assert File.exists?("_out/test/fred_test.exs")
     
     File.rm_rf!(dest)
-  end
+   end
 end
