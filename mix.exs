@@ -2,7 +2,7 @@ defmodule MixTemplates.Mixfile do
   use Mix.Project
 
   @name    :mix_templates
-  @version "0.1.2"
+  @version "0.1.3"
   @deps [
     { :private, "> 0.0.0" },
     { :ex_doc,  "~> 0.14", only: :dev, runtime: false },

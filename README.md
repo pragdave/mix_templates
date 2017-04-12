@@ -1,7 +1,6 @@
 # Mix Template—a package for creating customized directory trees
 
 
-
 Manage the local installation and uninstallation of templates used
 by `mix gen`.
 
@@ -13,7 +12,6 @@ You probably also need to install the generator:
 
     $ mix archive.install hex mix_generator
     
-
 
 ### Use
 
@@ -34,6 +32,11 @@ A high-level summary:
 * `mix template.uninstall «name»`
 
   Uninstall the template with the given name.
+
+* `mix template «name» --help
+
+  Get template-specific help. Useful to discover the extra options
+  a template supports.
 
 The «source» can be
 
@@ -59,7 +62,7 @@ The «source» can be
 
 Templates are installed in $MIX_HOME/templates (by default ~/.mix/templates).
 
-### Seed
+### See
 
 Details for each individual task can be found using `mix help template`,
 `mix help tmplate.hex` and so on.

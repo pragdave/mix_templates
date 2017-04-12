@@ -1,8 +1,10 @@
 defmodule Mix.Tasks.Template do
 
-  @moduledoc """
-
-  """
+  @moduledoc(
+    Path.join([__DIR__, "../../../README.md"])
+    |> File.read!
+    |> String.replace(~r/\A.*^### Use\w+/ms, "")
+    |> String.replace(~r/^###.*/ms, ""))
 
   use Private
   use Mix.Task

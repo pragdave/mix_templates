@@ -10,12 +10,14 @@ defmodule MixTemplates do
 
 This is the engine that supports templated directory trees.
 
-A template is a trivial mix project. It contains a single source file
-in `lib` that contains metadata and option parsing. It also contains a
-top-level directory called `template`. The directories and files
-underneath `template/` copied to the destination location. 
+A template is a trivial mix project that acts as the specification for
+the projects you want your users to be able to generate. It contains a
+single source file in `lib` that contains metadata and option parsing.
+It also contains a top-level directory called `template`. The
+directories and files underneath `template/` copied to the destination
+location.
 
-The copying function tasks a map containing key-value pairs. This is
+The copying function takes a map containing key-value pairs. This is
 passed to EEx, which is used to expand each individual file. Thus a
 template file for `mix.exs` may contain:
 
@@ -199,7 +201,8 @@ These examples are from my computer in US Central Daylight Time
     @template_module            the module containing your template metadata
     @template_name              the name of the template (from the metadata)
 
-    @target_dir                 where the generated project will go
+    @target_dir                 the project directory is created in this
+    @target_subdir              the project directory is called this
         
 
 ### Handling Command Line Parameters
@@ -254,17 +257,44 @@ You can add these options to your assigns, and then subsequently
 use them in your templates.
 
 ~~~ elixir
-def populate_assigns(assigns, options) do
-  assigns
-  |> add_assign(options, :pool,     20,   &String.to_integer/1)
-  |> add_assign(options, :logging,  false)
-end
+  def populate_assigns(assigns, options) do
+    assigns = add_defaults_to(assigns)
+    Enum.reduce(options, assigns, &handle_option/2)
+  end
 
-defp add*assign(assigns, options, option, default, mapper \\ &(&1)) do
-  value = Map.get(options, option, default)
-  put*in(assigns, option, mapper.(value))
-end
+  defp add_defaults_to(assigns) do
+    assigns |> Map.merge(%{ is_supervisor: false })
+  end
+
+  defp handle_option({ :supervisor, val }, assigns) do
+    assigns |> Map.put(:is_supervisor, val)
+    |> IO.inspect
+  end
 ~~~
+
+### Dealing with optional files and directories
+
+Sometimes you need to include a file or directory only if some condition
+is true. Use these helpers:
+
+* `MixTemplates.ignore_file_and_directory_unless(«condition»)`
+
+  Include this in a template, and the template and it's immediate directory
+  will not be generated in the output unless the condition is true. 
+
+  For example, in a new mix project, we only generate
+  `lib/«name»/application.ex` if we're creating a supervised app. The
+  `application.ex` template includes the following:
+
+      <%
+      #   ------------------------------------------------------------
+          MixTemplates.ignore_file_and_directory_unless @is_supervisor
+      #   ------------------------------------------------------------
+      %>
+      defmodule <%= @project_name_camel_case %>.Application do
+         # ...
+      end
+
 
 """
 
@@ -331,13 +361,23 @@ end
     Cache.find(name)
   end
   
-  def generate(template, assigns = %{ project_name: project_name }) do
-    target_dir = assigns.target_dir
+  def generate(template, assigns) do
     kws = [ assigns: assigns |> Map.to_list ]
-    check_existence_of(target_dir, project_name)
+    check_existence_of(assigns.target_dir, assigns.target_subdir)
     |> create_or_merge(template, kws)
   end
 
+  # called from within a template to cause it not to generate either this
+  # file or anything in this file's directory
+
+  def ignore_file_and_directory_unless(flag) when flag do
+    flag && nil
+  end
+
+  def ignore_file_and_directory_unless(flag) do
+    throw :ignore_file_and_directory
+  end
+  
   private do
     
     defp check_existence_of(dir, name) do
@@ -379,16 +419,24 @@ end
 
     defp copy_dir(source, dest, assigns) do
       MG.create_directory(dest)
-      File.ls!(source)
-      |> Enum.each(fn name ->
-        s = Path.join(source, name)
-        d = Path.join(dest, dest_file_name(name, assigns))
-        copy_tree_with_expansions(s, d, assigns)
-      end)
+      try do
+        File.ls!(source)
+        |> Enum.each(fn name ->
+          s = Path.join(source, name)
+          d = Path.join(dest, dest_file_name(name, assigns))
+          copy_tree_with_expansions(s, d, assigns)
+        end)
+      catch
+        :ignore_file_and_directory ->
+          File.rm_rf!(dest)
+          Mix.shell.info([:green, "- deleting",
+                          :reset, " #{dest} ",
+                          :faint, :cyan, "(it isn't needed)"])
+      end
     end
 
     defp copy_and_expand(source, dest, assigns) do
-      content = EEx.eval_file(source, assigns)
+      content = EEx.eval_file(source, assigns, [ trim: true ])
       MG.create_file(dest, content)
       mode = File.stat!(source).mode
       File.chmod!(dest, mode)

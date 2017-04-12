@@ -1,5 +1,13 @@
 defmodule Mix.Tasks.Template.Install do
 
+  @moduledoc(
+    Path.join([__DIR__, "../../../README.md"])
+    |> File.read!
+    |> String.replace(~r/\A.*^### Use\s+/ms, "")
+    |> String.replace(~r/^###.*/ms, ""))
+
+
+  
   defmodule TargetTemplate do
 
     @moduledoc """
@@ -24,45 +32,6 @@ defmodule Mix.Tasks.Template.Install do
     def task_name(), do: "template"
   end
   
-  @moduledoc """
-  Manage the local installation and uninstallation of templates used
-  by `mix gen`.
-
-  Usage:
-
-  * `mix template [list]`
-
-    List the locally installed templates.
-
-  * `mix template.hex`
-
-    List the templates available on hex.
-
-  * `mix template.install «source»`
-
-    Install a template from source.
-
-  * `mix template.uninstall «name»`
-
-    Uninstall the template with the given name.
-
-  The «source» can be
-
-  * the name of a Hex project containing the template
-
-  * a local file path (starting with a `.` or `/`)
-
-  Templates are installed in MIX_HOME/templates (by default ~/.mix/templates).    
-
-  For more on templates, see 
-  
-  * Mix.Tasks.Template
-  * Mix.Tasks.Template.hex
-  * Mix.Tasks.Template.uninstall
-
-  See `Mix.Tasks.Gen` for details on how to use these templates.
-
-  """
 
   use    Private
   use    Mix.Task
@@ -81,9 +50,6 @@ defmodule Mix.Tasks.Template.Install do
     {opts, args} = OptionParser.parse!(argv, strict: switches)
     target = TargetTemplate
 
-#    task_name         = target.task_name()
-#    {target_name, _ } = target.printable_name()
-    
     install_spec =
       case parse_args(args, opts) do
         {:error, message} -> Mix.raise message <> "\n" <> usage()
