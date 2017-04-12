@@ -1,6 +1,6 @@
 defmodule MixTemplates do
 
-@moduledoc """
+@moduledoc ~S"""
 
 > NOTE: This documentation is intended for folks who want to write
 > their own templates. If you just want to use a template, then
@@ -191,9 +191,13 @@ These examples are from my computer in US Central Daylight Time
 
     @host_os                    "os-name" or "os-name (variant)" eg: "unix (darwin)"
     @original_args              the original args passed to mix
+
     @elixir_version             eg: "1.5.3"
     @erlang_version             eg: "8.2"
     @otp_release                eg: "19"
+
+    @in_umbrella?               true if we're in the apps_path directory of an 
+                                umbrella project
 
 #### Stuff About the Template
 
@@ -257,19 +261,38 @@ You can add these options to your assigns, and then subsequently
 use them in your templates.
 
 ~~~ elixir
-  def populate_assigns(assigns, options) do
-    assigns = add_defaults_to(assigns)
-    Enum.reduce(options, assigns, &handle_option/2)
-  end
+    def populate_assigns(assigns, options) do
+      assigns = add_defaults_to(assigns)
+      options |> Enum.reduce(assigns, &handle_option/2)
+    end
 
-  defp add_defaults_to(assigns) do
-    assigns |> Map.merge(%{ is_supervisor: false })
-  end
+    defp add_defaults_to(assigns) do
+      assigns
+      |> Map.merge(%{ is_supervisor: false })
+    end
 
-  defp handle_option({ :supervisor, val }, assigns) do
-    assigns |> Map.put(:is_supervisor, val)
-    |> IO.inspect
-  end
+    defp handle_option({ :app, val }, assigns) do
+      %{ assigns | project_name: val }
+    end
+
+    defp handle_option({ :application, val }, assigns) do
+      handle_option({ :app, val }, assigns)
+    end
+
+    defp handle_option({ :supervisor, val }, assigns) do
+      %{ assigns | supervisor: val }
+    end
+
+    # ...
+
+    defp handle_option({ :into, _ }, assigns), do: assigns
+
+    defp handle_option({ opt, val }, _) do
+      Mix.shell.error([ :red,    "\nError: ",
+                        :reset,  "unknown option ",
+                        :yellow, "--#{opt} #{inspect val}\n"])
+      Process.exit(self(), :normal)
+    end
 ~~~
 
 ### Dealing with optional files and directories
@@ -357,7 +380,6 @@ is true. Use these helpers:
   end
     
   def find(name) when is_atom(name) do
-    IO.inspect "new version"
     Cache.find(name)
   end
   
@@ -371,10 +393,10 @@ is true. Use these helpers:
   # file or anything in this file's directory
 
   def ignore_file_and_directory_unless(flag) when flag do
-    flag && nil
+    flag && nil  # bypass unused variable warning
   end
 
-  def ignore_file_and_directory_unless(flag) do
+  def ignore_file_and_directory_unless(_) do
     throw :ignore_file_and_directory
   end
   
