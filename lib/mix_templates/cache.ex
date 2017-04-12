@@ -4,7 +4,7 @@ defmodule MixTemplates.Cache do
   
   @moduledoc """
   Manage the cache of local templates. These are stored as Elixir projects
-  under MIX_HOME/templates
+  under `MIX_HOME/templates`.
   """
 
   @doc """

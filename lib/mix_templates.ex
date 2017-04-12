@@ -28,6 +28,9 @@ defmodule <%= @project_name_camel_case %>.Mixfile do
   @name    :<%= @project_name %>
   @version "0.1.0"
 
+  . . .
+~~~
+
 
 The `<%= ... %>` constructs are expanded using the passed-in map.
 
@@ -223,19 +226,19 @@ your template module (the file in your top-level `lib/`). You can
 receive the parameters by defining a callback
 
 ~~~ elixir
-    defmodule MyTemplate do
+defmodule MyTemplate do
 
-      @moduledoc File.read!(Path.join([__DIR__, "../README.md"]))
+  @moduledoc File.read!(Path.join([__DIR__, "../README.md"]))
 
-      use MixTemplates,
-        name:       :my_template,
-        short_desc: "Template for ....",
-        source_dir: "../template"
+  use MixTemplates,
+    name:       :my_template,
+    short_desc: "Template for ....",
+    source_dir: "../template"
 
-      def populate_assigns(assigns, options) do
-        # ...
-      end
-    end
+  def populate_assigns(assigns, options) do
+    # ...
+  end
+end
 ~~~
 
 The `populate_assigns` function is called immediately after the
@@ -261,38 +264,38 @@ You can add these options to your assigns, and then subsequently
 use them in your templates.
 
 ~~~ elixir
-    def populate_assigns(assigns, options) do
-      assigns = add_defaults_to(assigns)
-      options |> Enum.reduce(assigns, &handle_option/2)
-    end
+def populate_assigns(assigns, options) do
+  assigns = add_defaults_to(assigns)
+  options |> Enum.reduce(assigns, &handle_option/2)
+end
 
-    defp add_defaults_to(assigns) do
-      assigns
-      |> Map.merge(%{ is_supervisor: false })
-    end
+defp add_defaults_to(assigns) do
+  assigns
+  |> Map.merge(%{ is_supervisor: false })
+end
 
-    defp handle_option({ :app, val }, assigns) do
-      %{ assigns | project_name: val }
-    end
+defp handle_option({ :app, val }, assigns) do
+  %{ assigns | project_name: val }
+end
 
-    defp handle_option({ :application, val }, assigns) do
-      handle_option({ :app, val }, assigns)
-    end
+defp handle_option({ :application, val }, assigns) do
+  handle_option({ :app, val }, assigns)
+end
 
-    defp handle_option({ :supervisor, val }, assigns) do
-      %{ assigns | supervisor: val }
-    end
+defp handle_option({ :supervisor, val }, assigns) do
+  %{ assigns | supervisor: val }
+end
 
-    # ...
+# ...
 
-    defp handle_option({ :into, _ }, assigns), do: assigns
+defp handle_option({ :into, _ }, assigns), do: assigns
 
-    defp handle_option({ opt, val }, _) do
-      Mix.shell.error([ :red,    "\nError: ",
-                        :reset,  "unknown option ",
-                        :yellow, "--#{opt} #{inspect val}\n"])
-      Process.exit(self(), :normal)
-    end
+defp handle_option({ opt, val }, _) do
+  Mix.shell.error([ :red,    "\nError: ",
+                    :reset,  "unknown option ",
+                    :yellow, "--#{opt} #{inspect val}\n"])
+  Process.exit(self(), :normal)
+end
 ~~~
 
 ### Dealing with optional files and directories
@@ -309,15 +312,16 @@ is true. Use these helpers:
   `lib/«name»/application.ex` if we're creating a supervised app. The
   `application.ex` template includes the following:
 
-      <%
-      #   ------------------------------------------------------------
-          MixTemplates.ignore_file_and_directory_unless @is_supervisor
-      #   ------------------------------------------------------------
-      %>
-      defmodule <%= @project_name_camel_case %>.Application do
-         # ...
-      end
-
+    ~~~ elixir
+    <%
+    #   ------------------------------------------------------------
+        MixTemplates.ignore_file_and_directory_unless @is_supervisor?
+    #   ------------------------------------------------------------
+    %>
+    defmodule <%= @project_name_camel_case %>.Application do
+       # ...
+    end
+    ~~~
 
 """
 
