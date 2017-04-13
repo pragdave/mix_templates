@@ -62,17 +62,9 @@ defmodule Mix.Tasks.Template.Install do
     end
 
     case install_spec do
-      {:fetcher, dep_spec} ->
-        if opts[:sha512] do
-          Mix.raise "--sha512 is not supported for template.install from git/github/hex\n" <> usage()
-        end
-
-        fetch dep_spec, fn mixfile ->
-          build(mixfile)
-          argv = if opts[:force], do: ["--force"], else: []
-          install(argv, switches)
-        end
-
+      {:fetcher, _dep_spec} ->
+        install_from(install_spec, opts, switches)
+        
       {:local, src} ->
         install_from_local(src)
 
@@ -84,6 +76,32 @@ defmodule Mix.Tasks.Template.Install do
     end
   end
 
+  defp install_from({:fetcher, dep_spec}, opts, switches) do
+    if opts[:sha512] do
+      Mix.raise "--sha512 is not supported for template.install from git/github/hex\n" <> usage()
+    end
+
+    try do
+      fetch dep_spec, fn mixfile ->
+        build(mixfile)
+        argv = if opts[:force], do: ["--force"], else: []
+        install(argv, switches)
+      end
+    rescue
+      e in Mix.Error ->
+        if String.starts_with?(e.message, "No package with name ") do
+          { _, _, [hex: name]} = dep_spec
+
+          if not String.starts_with?(to_string(name), "gen_template_") do
+            Mix.shell.info([
+              "\nI can't find a template called #{name} in hex.\n\nPerhaps you meant ",
+              :green, "gen_template_#{name}", :reset, "?\n"])
+          end
+        end
+      raise e
+    end
+  end
+  
   defp install_from_local(src) do
     case Cache.install_from_local_tree(src) do
       { :error, reason } ->
@@ -142,7 +160,12 @@ defmodule Mix.Tasks.Template.Install do
           :ok
           
         :badpath ->
-          Mix.raise "Expected #{inspect src} to be a URL or a local file path"
+          Mix.raise """
+          Expected #{inspect src} to be a URL or a local file path.
+          Perhaps you meant
+
+              “mix template install hex #{src}”
+          """
 
         {:local, message} ->
           Mix.raise message
@@ -194,7 +217,13 @@ defmodule Mix.Tasks.Template.Install do
     cond do
       local_dir?(url_or_path) -> {:local, url_or_path}
       file_url?(url_or_path)  -> {:url, url_or_path}
-      true -> {:error, "Expected a local file path or a file URL."}
+      true -> {
+        :error, 
+        """
+        Expected a local file path or a file URL. Perhaps you meant:
+       
+            mix template.install hex #{url_or_path}
+        """}
     end
   end
 
