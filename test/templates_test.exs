@@ -20,14 +20,14 @@ defmodule TemplatesTest do
     end
     
     test "are added to the cache" do
-      assert template = MT.find(:one)
-      assert template.name == :one      
-      assert template = MT.find(:two)
-      assert template.name == :two      
+      template1 = MT.find(:one)
+      assert template1.name == :one
+      template2 = MT.find(:two)
+      assert template2.name == :two      
     end
   
     test "know their source directory" do
-      assert template = MT.find(:one)
+      template = MT.find(:one)
       dir = template.source_dir
       assert String.starts_with?(dir, Mix.Utils.mix_home)
       assert String.ends_with?(dir, "/template/$PROJECT_NAME$")
@@ -84,7 +84,8 @@ defmodule TemplatesTest do
   end
   
   test "merging projects not supported" do
-    assert { :error, msg } = MT.create_or_merge({:maybe_update, "a"}, "b", "c")
+    dummy_assigns = %{ assigns: %{}}
+    assert { :error, msg } = MT.create_or_merge({:maybe_update, "a"}, "b", dummy_assigns)
     assert msg == "Updating an existing project is not yet supported"
   end
   

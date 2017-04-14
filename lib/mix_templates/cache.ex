@@ -49,7 +49,7 @@ defmodule MixTemplates.Cache do
   end
 
   @doc """
-  Return the template's module, or `nil` if it doesn't exist'
+  Return the template's module, or `nil` if it doesn't exist
   """
   def find(name) do
     path = template_path(name)
@@ -103,11 +103,16 @@ defmodule MixTemplates.Cache do
     end
 
     defp with_no_warnings(code) do
-      original_options = Code.compiler_options
-      Code.compiler_options(ignore_module_conflict: true)
-      result = code.()
-      Code.compiler_options(original_options)
-      result
+      try do
+        original_options = Code.compiler_options
+        Code.compiler_options(ignore_module_conflict: true)
+        result = code.()
+        Code.compiler_options(original_options)
+        result
+      rescue
+        _e in _ ->
+          nil
+      end
     end
   end
   
