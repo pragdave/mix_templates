@@ -241,69 +241,75 @@ defmodule MyTemplate do
     name:       :my_template,
     short_desc: "Template for ....",
     source_dir: "../template"
-
-  def populate_assigns(assigns, options) do
-    # ...
-  end
+    options:    [
+        supervised: [ to: :is_supervised?, default: false ],
+        sup:        [ same_as: :supervised ],
+    ]
 end
 ~~~
 
-The `populate_assigns` function is called immediately after the
-standard set of assigns have been created, and before any templating
-is done. It receives the current assigns (a map) and the options
-passed to `mix gen` (another map). It must return a (potentially
-updated) assigns map.
+`options` is a specification of the command line parameters that your
+template accepts. In all cases, the key is the parameter as it appears
+on the command line, and the keyword list that is the value gives
+information about that option.
 
-For example, if the user invoked your template with
-
-        $ mix gen a_template my_app --pool 10 --logging
-
-The options passed to `populate_assigns` would be
+The simplest option is
 
 ~~~ elixir
-%{into: ".", logging: true, pool: "10"}
+name:  []
 ~~~
 
-(The `:into` entry is used by the generator—it is basically the target
-directory)
+This says that `--name` is a valid option. If you add it to the
+command line with no value following it, then `:name` will appear in
+the assigns with the value `true`. It you pass in a value, then that
+value will appear in the assigns.project_name
 
-You can add these options to your assigns, and then subsequently
-use them in your templates.
+If you do not specify `--name` on the command line, there will be no
+entry with the key `:name` in the assigns.
+
+The `required` key says that a given parameter _must_ appear on the command line.
 
 ~~~ elixir
-def populate_assigns(assigns, options) do
-  assigns = add_defaults_to(assigns)
-  options |> Enum.reduce(assigns, &handle_option/2)
-end
-
-defp add_defaults_to(assigns) do
-  assigns
-  |> Map.merge(%{ is_supervisor: false })
-end
-
-defp handle_option({ :app, val }, assigns) do
-  %{ assigns | project_name: val }
-end
-
-defp handle_option({ :application, val }, assigns) do
-  handle_option({ :app, val }, assigns)
-end
-
-defp handle_option({ :supervisor, val }, assigns) do
-  %{ assigns | supervisor: val }
-end
-
-# ...
-
-defp handle_option({ :into, _ }, assigns), do: assigns
-
-defp handle_option({ opt, val }, _) do
-  Mix.shell.error([ :red,    "\nError: ",
-                    :reset,  "unknown option ",
-                    :yellow, "--#{opt} #{inspect val}\n"])
-  Process.exit(self(), :normal)
-end
+name:  [ required: true ]
 ~~~
+
+`default` provides a value to use if the parameter does not appear on
+the command line:
+
+~~~ elixir
+name:  [ default: "nancy" ]
+~~~
+
+If a default value is given, the entry will _always_ appear in the
+assigns.project_name
+
+By default the name of the field in the assigns will be the key in the
+options list. You can override this using `to`.
+
+~~~ elixir
+name:  [ to: :basic_id, default: "nancy" ]
+~~~
+
+In this example, calling
+
+     $ mix gen my_template my_app --name walter
+
+will create an assigns map that includes `\@basic_id` with a value of “walter.”
+
+Finally, you can alias a option using `same_as`.
+
+The following will allow both `--sup` and `--supervised` on the
+command line, and will map either to the key `:is_supervised?` in the
+assigns.
+
+~~~ elixir
+options:    [
+    supervised: [ to: :is_supervised?, default: false ],
+    sup:        [ same_as: :supervised ],
+]
+~~~
+
+
 
 ### Dealing with optional files and directories
 
@@ -322,10 +328,10 @@ is true. Use these helpers:
     ~~~ elixir
     <%
     #   ------------------------------------------------------------
-        MixTemplates.ignore_file_and_directory_unless @is_supervisor?
+        MixTemplates.ignore_file_and_directory_unless \@is_supervisor?
     #   ------------------------------------------------------------
     %>
-    defmodule <%= @project_name_camel_case %>.Application do
+    defmodule <%= \@project_name_camel_case %>.Application do
        # ...
     end
     ~~~
@@ -363,7 +369,7 @@ Use the `based_on: «template»` option to facilitate this:
 ~~~ elixir
 defmodule MyTemplate do
 
-  @moduledoc File.read!(Path.join([__DIR__, "../README.md"]))
+  \@moduledoc File.read!(Path.join([__DIR__, "../README.md"]))
 
   use MixTemplates,
     name:       :my_template,
@@ -415,6 +421,7 @@ end
 
     override_source_dir = Keyword.get(opts, :source_dir) 
     quote do
+
       @doc """
       Return the name of this template as an atom. This is
       the name passed to the gen command.
@@ -462,16 +469,6 @@ end
         unquote(opts[:options] || [])
       end
       
-      @doc """
-      Override this function to process command line options and 
-      set values passed into the template via `assigns`.
-      """
-      def populate_assigns(assigns, _options) do
-        assigns
-      end
-
-      defoverridable populate_assigns: 2
-
       @doc """
       Override this function to do any cleanup after your template
       has been copied into the user project. One use of this is to remove
@@ -599,7 +596,7 @@ end
     end
     
 
-    defp maybe_create_directory(path, force) do
+    defp maybe_create_directory(path, _force) do
       if File.exists?(path) do
         Mix.shell.info([:green, "• existing #{path}"])
       else
