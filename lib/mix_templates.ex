@@ -92,14 +92,21 @@ Your first job is to update the metadata in lib/«whatever».ex:
       use MixTemplates,
         name:       :my_template,
         short_desc: "Template for ....",
-        source_dir: "../template"
+        source_dir: "../template",
+        based_on:   :another_project,
+        options:    [ command line options unique to this template ]
 
     end
 
-The only change you're likely to make to the metadata is to update the
-short description. This is used to display information about the
-template when you list the templates you have installed, so you
-probably want to keep it under 70 characters.
+For a simple template, the only change you're likely to make to the
+metadata is to update the short description. This is used to display
+information about the template when you list the templates you have
+installed, so you probably want to keep it under 70 characters.
+
+If you want to write a template that is based on another, use the
+`:based_on` option. This causes the parent template to be processed
+before your local template. This means your template need only implement 
+the changes to the base.
 
 #### Add the Files
 
@@ -445,6 +452,14 @@ end
       """
       def based_on do
         unquote(opts[:based_on])
+      end
+      
+
+      @doc """
+      Return the list of options supported by this template.
+      """
+      def options do
+        unquote(opts[:options] || [])
       end
       
       @doc """
