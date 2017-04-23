@@ -10,7 +10,7 @@ defmodule Mix.Tasks.Template.Hex do
 
   def run(_) do
     Mix.Hex.start()
-    
+
     "gen_template"
     |> Hex.API.Package.search
     |> extract_stuff_we_need
@@ -49,16 +49,11 @@ defmodule Mix.Tasks.Template.Hex do
       Mix.shell.info([:bright, :green, name,
                       :reset, ":\n",
                       indent(description)])
-      
+
     end
 
     defp indent(string) do
       "    #{String.replace(string, "\n", "\n    ") |> String.trim_trailing}\n"
     end
-
-    defp start_hex do
-      
-    end
   end
 end
-

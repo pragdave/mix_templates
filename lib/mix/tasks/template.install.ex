@@ -7,31 +7,29 @@ defmodule Mix.Tasks.Template.Install do
     |> String.replace(~r/^###.*/ms, ""))
 
 
-  
+
   defmodule TargetTemplate do
 
     @moduledoc """
     Define naming conventions for template targets
     """
     
-    @behaviour Mix.Local.Target
-
     def name_for(project) do
       project[:app]
       |> to_string()
     end
-    
+
     def path_for() do
       Path.join(Mix.Utils.mix_home, "templates")
     end
-    
+
     def printable_name() do
       { "template", "templates" }
     end
-    
+
     def task_name(), do: "template"
   end
-  
+
 
   use    Private
   use    Mix.Task
@@ -39,13 +37,13 @@ defmodule Mix.Tasks.Template.Install do
 
 
   @doc nil
-  @spec run(OptionParser.argv) :: boolean  
+  @spec run(OptionParser.argv) :: boolean
   def run(argv) do
     install(argv, [])
   end
 
-  
-  
+
+
   def install(argv, switches) do
     {opts, args} = OptionParser.parse!(argv, strict: switches)
     target = TargetTemplate
@@ -64,13 +62,13 @@ defmodule Mix.Tasks.Template.Install do
     case install_spec do
       {:fetcher, _dep_spec} ->
         install_from(install_spec, opts, switches)
-        
+
       {:local, src} ->
         install_from_local(src)
 
       {:url, src} ->
         do_install(target, src, opts)
-        
+
       :project ->
         install_from_local(System.cwd())
     end
@@ -101,7 +99,7 @@ defmodule Mix.Tasks.Template.Install do
       raise e
     end
   end
-  
+
   defp install_from_local(src) do
     case Cache.install_from_local_tree(src) do
       { :error, reason } ->
@@ -113,7 +111,7 @@ defmodule Mix.Tasks.Template.Install do
         :ok
     end
   end
-  
+
   defp local_dir?(url_or_path) do
     File.dir?(url_or_path)
   end
@@ -128,7 +126,7 @@ defmodule Mix.Tasks.Template.Install do
   def check_install_spec(_, _) do
     :ok
   end
-  
+
 
   @doc """
   Returns a list of already installed version of the same archive or escript.
@@ -143,7 +141,7 @@ defmodule Mix.Tasks.Template.Install do
   def build(_) do
     IO.puts "Project contains: #{inspect Path.wildcard("*")}"
   end
-  
+
   defp usage() do
     "\nRun:\n\n    mix help template.install\n\nfor more information."
   end
@@ -158,7 +156,7 @@ defmodule Mix.Tasks.Template.Install do
         {:ok, _binary} ->
           # install(dst, binary, previous_files)
           :ok
-          
+
         :badpath ->
           Mix.raise """
           Expected #{inspect src} to be a URL or a local file path.
@@ -218,10 +216,10 @@ defmodule Mix.Tasks.Template.Install do
       local_dir?(url_or_path) -> {:local, url_or_path}
       file_url?(url_or_path)  -> {:url, url_or_path}
       true -> {
-        :error, 
+        :error,
         """
         Expected a local file path or a file URL. Perhaps you meant:
-       
+
             mix template.install hex #{url_or_path}
         """}
     end
@@ -413,4 +411,3 @@ defmodule Mix.Tasks.Template.Install do
     end
   end
 end
-

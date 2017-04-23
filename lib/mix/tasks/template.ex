@@ -9,30 +9,20 @@ defmodule Mix.Tasks.Template do
   use Private
   use Mix.Task
 
+  alias MixTemplates.Cache
+
   @doc nil
   def run([]) do
-    case MixTemplates.Cache.list() do
-      [] ->
-        Mix.shell.info("""
-        No templates installed. 
-
-        Use `mix template.hex' to list templates available in hex, and
-        `mix template.install` to install the ones you need.
-        """)
-      list ->
-        Mix.shell.info("\nLocally installed templates:\n")
-        Enum.each(list, &display_template_info(&1, :short))
-        end
+      Cache.display_list_of_templates()
   end
 
-  
-  private do
+  def run([template_name]), do: run([template_name, "--help"])
+  def run([template_name, "-h"]), do: run([template_name, "--help"])
 
-    defp display_template_info(template, :short) do
-      Mix.shell.info [ :bright, :green, to_string(template.name), :reset, ":" ]
-      Mix.shell.info "\t#{template.short_desc}\n"
-    end
-    
+  def run([template_name, "--help"]) do
+    template_name
+    |> Cache.find_template()
+    |> Cache.display_template_info(:long)
   end
 
 end

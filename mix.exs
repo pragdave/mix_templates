@@ -2,7 +2,7 @@ defmodule MixTemplates.Mixfile do
   use Mix.Project
 
   @name    :mix_templates
-  @version "0.1.9"
+  @version "0.1.10"
   @deps [
     { :private, "> 0.0.0" },
     { :ex_doc,  "~> 0.14", only: :dev, runtime: false },
@@ -13,14 +13,14 @@ defmodule MixTemplates.Mixfile do
 
   You care about this if:
 
-  ① you'd like different templates than the ones built in to mix, 
-  ② you'd like to create your own templates, or 
+  ① you'd like different templates than the ones built in to mix,
+  ② you'd like to create your own templates, or
   ③ you have created a package such as Phoenix or Nerves that needs
      its own project setup.
   """
-  
+
   ############################################################
-  
+
   def project do
     in_production = Mix.env == :prod
     [
