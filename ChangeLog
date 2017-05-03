@@ -1,0 +1,6 @@
+2017-05-03  Dave Thomas  <dave@plasma.local>
+
+	* mix.exs: Update version to 0.1.11. This version fixes a problem
+	with mix 0.16
+
+
