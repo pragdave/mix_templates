@@ -19,6 +19,14 @@ defmodule Mix.Tasks.Template.Hex do
 
   private do
 
+    defp extract_stuff_we_need({:ok, response}) do
+      extract_stuff_we_need(response)
+    end
+
+    defp extract_stuff_we_need({:error, term}) do
+      Mix.raise "error #{inspect(term)} while searching hex packages"
+    end
+
     defp extract_stuff_we_need({200, content, _}) do
       content
       |> Enum.filter(&is_a_template?/1)
