@@ -1,3 +1,7 @@
+2017-05-18  Dave Thomas  <dave@plasma.local>
+
+	* lib/mix_templates.ex (options): Add new helper `ignore_file_unless`. Thanks to Donald Plummer
+
 2017-05-03  Dave Thomas  <dave@plasma.local>
 
 	* mix.exs: Update version to 0.1.11. This version fixes a problem
