@@ -336,6 +336,10 @@ is true. Use these helpers:
     end
     ~~~
 
+Sometimes you just need to skip a single file if some condition is true. Use this helper:
+
+* `MixTemplates.ignore_file_unless(«condition»)`
+
 ### Cleaning Up
 
 In most cases your work is done once the template is copied into the
@@ -508,7 +512,17 @@ end
   def ignore_file_and_directory_unless(_) do
     throw :ignore_file_and_directory
   end
-  
+
+  # called from within a template to cause it not to generate this file
+
+  def ignore_file_unless(flag) when flag do
+    flag && nil  # bypass unused variable warning
+  end
+
+  def ignore_file_unless(_) do
+    throw :ignore_file
+  end
+
   private do
     
     defp check_existence_of(dir, name) do
@@ -571,10 +585,17 @@ end
     end
 
     defp copy_and_expand(source, dest, assigns) do
-      content = EEx.eval_file(source, assigns, [ trim: true ])
-      MG.create_file(dest, content)
-      mode = File.stat!(source).mode
-      File.chmod!(dest, mode)
+      try do
+        content = EEx.eval_file(source, assigns, [ trim: true ])
+        MG.create_file(dest, content)
+        mode = File.stat!(source).mode
+        File.chmod!(dest, mode)
+      catch
+        :ignore_file ->
+          Mix.shell.info([:green, "- ignoring",
+                          :reset, " #{dest} ",
+                          :faint, :cyan, "(it isn't needed)"])
+      end
     end
 
     defp mandatory_option(nil,    msg), do: raise(CompileError, description: msg)
