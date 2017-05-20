@@ -4,7 +4,7 @@ defmodule MixTemplates do
 
 > NOTE: This documentation is intended for folks who want to write
 > their own templates. If you just want to use a template, then
-> have a look at the README, or try `mix help template` and 
+> have a look at the README, or try `mix help template` and
 > `mix help gen`.
 
 
@@ -105,7 +105,7 @@ installed, so you probably want to keep it under 70 characters.
 
 If you want to write a template that is based on another, use the
 `:based_on` option. This causes the parent template to be processed
-before your local template. This means your template need only implement 
+before your local template. This means your template need only implement
 the changes to the base.
 
 #### Add the Files
@@ -129,25 +129,25 @@ tree you want your users to produce locally when they run `mix gen`.
   Rename this file to
 
         test/$PROJECT_NAME$.exs
-  
+
 * Now you need to look through the files for content that should be
   customized to each new project that's generated. Replace this
   content using EEx substitutions:
-  
+
   For example, the top-level application might be an Elixir file:
-  
+
         defmodule MyApp do
           # . . .
         end
-        
+
   Replace this with
-  
+
         defmodule <%= project_name_camel_case %> do
           # . . .
         end
-        
+
   There's a list of the available values in the next section.
-  
+
 ### Test Your Template
 
 You can use `mix gen` to test your template while you're developing
@@ -156,7 +156,7 @@ it. Simply give it the path to the directory containing the generator
 (".") or slash ("/").
 
         $ mix gen ../work/my_generator test_project
-        
+
 ### Publish Your Template
 
 Wander back to the `mix.exs` file at the top of your project, and
@@ -164,8 +164,8 @@ update the `@description`, `@maintainers`, and `@github` attributes.
 Then publish to hex:
 
         $ mix hex.publish
-        
-        
+
+
 and wait for the praise.
 
 ## Standard Substitutions
@@ -206,7 +206,7 @@ These examples are from my computer in US Central Daylight Time
     @erlang_version             eg: "8.2"
     @otp_release                eg: "19"
 
-    @in_umbrella?               true if we're in the apps_path directory of an 
+    @in_umbrella?               true if we're in the apps_path directory of an
                                 umbrella project
 
 #### Stuff About the Template
@@ -217,7 +217,7 @@ These examples are from my computer in US Central Daylight Time
 
     @target_dir                 the project directory is created in this
     @target_subdir              the project directory is called this
-        
+
 
 ### Handling Command Line Parameters
 
@@ -227,7 +227,7 @@ the options specified on the command line. For example, the standard
 indicate you want the latter, you add a command line flag:
 
         $ mix gen project my_app --supervised
-        
+
 This option is not handled by the `gen` task. Instead, it passes it to
 your template module (the file in your top-level `lib/`). You can
 receive the parameters by defining a callback
@@ -267,17 +267,30 @@ value will appear in the assigns.project_name
 If you do not specify `--name` on the command line, there will be no
 entry with the key `:name` in the assigns.
 
+If your option takes an argument, you specify its name using `takes:`.
+
+~~~ elixir
+name:  [ takes: "your-name" ]
+~~~
+
+
 The `required` key says that a given parameter _must_ appear on the command line.
 
 ~~~ elixir
-name:  [ required: true ]
+name:  [
+  takes:    "your-name",
+  required: true
+]
 ~~~
 
 `default` provides a value to use if the parameter does not appear on
 the command line:
 
 ~~~ elixir
-name:  [ default: "nancy" ]
+name:  [
+  takes:   "your-name",
+  default: "nancy"
+]
 ~~~
 
 If a default value is given, the entry will _always_ appear in the
@@ -287,7 +300,11 @@ By default the name of the field in the assigns will be the key in the
 options list. You can override this using `to`.
 
 ~~~ elixir
-name:  [ to: :basic_id, default: "nancy" ]
+name:  [
+  takes:   "your-name",
+  to:      :basic_id,
+  default: "nancy"
+]
 ~~~
 
 In this example, calling
@@ -319,7 +336,7 @@ is true. Use these helpers:
 * `MixTemplates.ignore_file_and_directory_unless(«condition»)`
 
   Include this in a template, and the template and it's immediate directory
-  will not be generated in the output unless the condition is true. 
+  will not be generated in the output unless the condition is true.
 
   For example, in a new mix project, we only generate
   `lib/«name»/application.ex` if we're creating a supervised app. The
@@ -418,12 +435,12 @@ end
   use   Private
   alias Mix.Generator, as: MG
   alias MixTemplates.Cache
-  
+
   defmacro __using__(opts) do
     name = mandatory_option(opts[:name],
       "template must include\n\n\tname: \"template_name\"\n\n")
 
-    override_source_dir = Keyword.get(opts, :source_dir) 
+    override_source_dir = Keyword.get(opts, :source_dir)
     quote do
 
       @doc """
@@ -464,7 +481,7 @@ end
       def based_on do
         unquote(opts[:based_on])
       end
-      
+
 
       @doc """
       Return the list of options supported by this template.
@@ -472,7 +489,7 @@ end
       def options do
         unquote(opts[:options] || [])
       end
-      
+
       @doc """
       Override this function to do any cleanup after your template
       has been copied into the user project. One use of this is to remove
@@ -491,11 +508,11 @@ end
   when is_binary(name) do
     name |> String.to_atom |> find
   end
-    
+
   def find(name) when is_atom(name) do
     Cache.find(name)
   end
-  
+
   def generate(template, assigns) do
     kws = [ assigns: assigns |> Map.to_list ]
     check_existence_of(assigns.target_dir, assigns.target_subdir)
@@ -524,7 +541,7 @@ end
   end
 
   private do
-    
+
     defp check_existence_of(dir, name) do
       path = Path.join(dir, name)
       cond do
@@ -554,7 +571,7 @@ end
         { :error, "Updating an existing project is not yet supported" }
       end
     end
-    
+
 
     defp copy_tree_with_expansions(source, dest, assigns) do
       if File.dir?(source) do
@@ -615,7 +632,7 @@ end
     defp maybe_create_directory(path, force) when not force do
       MG.create_directory(path)
     end
-    
+
 
     defp maybe_create_directory(path, _force) do
       if File.exists?(path) do
@@ -625,5 +642,5 @@ end
       end
     end
 
-  end  
+  end
 end
