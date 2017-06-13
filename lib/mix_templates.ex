@@ -603,8 +603,16 @@ end
 
     defp copy_and_expand(source, dest, assigns) do
       try do
-        content = EEx.eval_file(source, assigns, [ trim: true ])
-        MG.create_file(dest, content)
+        try do
+          content = EEx.eval_file(source, assigns, [ trim: true ])
+          MG.create_file(dest, content)
+        rescue
+          _ ->
+            Mix.shell.info([:green, "- copying",
+                          :reset, " #{dest} ",
+                          :faint, :cyan, "(binary file?)"])
+            File.cp!(source, dest)
+        end
         mode = File.stat!(source).mode
         File.chmod!(dest, mode)
       catch
