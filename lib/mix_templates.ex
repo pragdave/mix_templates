@@ -357,6 +357,28 @@ Sometimes you just need to skip a single file if some condition is true. Use thi
 
 * `MixTemplates.ignore_file_unless(«condition»)`
 
+### Binary Files
+
+By default, binary files are ignored if they exist in a template. To copy over
+binary files into generated projects, specify the `copied_files` option, which
+functions as a whitelist of files that should be copied over directly.
+
+As an example:
+
+~~~ elixir
+  use MixTemplates,
+    name: :my_template,
+    copied_files: %{"png" => :all,
+                    "ico" => ["favicon.ico"]}
+~~~
+
+The above example will copy over all files with an extension of `png` as the
+`favicon.ico` file. It will not copy any other files with the `ico` extension
+nor any other files without a `png` extension. All other files will simply be
+ignored.
+
+To whitelist all binary files, simply set a `copied_files` value of `:all`.
+
 ### Cleaning Up
 
 In most cases your work is done once the template is copied into the
@@ -441,6 +463,7 @@ end
       "template must include\n\n\tname: \"template_name\"\n\n")
 
     override_source_dir = Keyword.get(opts, :source_dir)
+
     quote do
 
       @doc """
@@ -456,6 +479,14 @@ end
       """
       def short_desc do
         unquote(opts[:short_desc])
+      end
+
+      @doc """
+      Return a map where the keys are filename extensions and the keys are
+      either the :all atom or a list of allowed files with that extension.
+      """
+      def copied_files do
+        unquote(opts[:copied_files])
       end
 
       @doc """
@@ -603,10 +634,13 @@ end
 
     defp copy_and_expand(source, dest, assigns) do
       try do
-        content = EEx.eval_file(source, assigns, [ trim: true ])
-        MG.create_file(dest, content)
-        mode = File.stat!(source).mode
-        File.chmod!(dest, mode)
+        case generate_new_file(source, dest, assigns) do
+          {:error, message} -> {:error, message}
+          new_file ->
+            MG.create_file(dest, new_file)
+            mode = File.stat!(source).mode
+            File.chmod!(dest, mode)
+        end
       catch
         :ignore_file ->
           Mix.shell.info([:green, "- ignoring",
@@ -615,11 +649,56 @@ end
       end
     end
 
+    defp generate_new_file(source, dest, assigns) do
+      case assigns[:assigns][:copied_files] do
+        :all ->
+          evaluate_eex(source, dest, assigns, true)
+        copied_files when is_map(copied_files) ->
+          file_extension = String.split(source, ".") |> List.last
+          case Map.fetch(copied_files, file_extension) do
+            {:ok, :all} ->
+              File.read!(source)
+            {:ok, allowed_files} when is_list(allowed_files) ->
+              file_name = String.split(source, "/") |> List.last
+              if Enum.any?(allowed_files, &(&1 == file_name)) do
+                File.read!(source)
+              else
+                evaluate_eex(source, dest, assigns)
+              end
+            _ ->
+              evaluate_eex(source, dest, assigns)
+          end
+        _ ->
+          evaluate_eex(source, dest, assigns)
+      end
+    end
+
+    defp evaluate_eex(source, dest, assigns, handle_binary \\ false) do
+      try do
+        EEx.eval_file(source, assigns, [ trim: true ])
+      rescue
+        UnicodeConversionError ->
+          if handle_binary do
+            File.read!(source)
+          else
+            Mix.shell.error([:red, "- ignoring",
+                            :reset, " #{dest} ",
+                            :faint, :red, "(unexpected binary file. ",
+                            "See the \"copied_files\" option)"])
+            {:error, :unexpected_binary}
+          end
+        _ ->
+          Mix.shell.error([:red, "- ignoring",
+                          :reset, " #{dest} ",
+                          :faint, :red, "(unhandled error generating file)"])
+          {:error, :unhandled}
+      end
+    end
+
     defp mandatory_option(nil,    msg), do: raise(CompileError, description: msg)
     defp mandatory_option(value, _msg), do: value
 
-
-    # You can escape the projrct name by doubling the $ characters,
+    # You can escape the project name by doubling the $ characters,
     # so $$PROJECT_NAME$$ becomes $PROJECT_NAME$
     defp dest_file_name(name, assigns) do
       if name =~ ~r{\$\$PROJECT_NAME\$\$} do
