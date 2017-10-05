@@ -12,9 +12,9 @@ defmodule Mix.Tasks.Template.Hex do
     Mix.Hex.start()
 
     "gen_template"
-    |> Hex.API.Package.search
-    |> extract_stuff_we_need
-    |> display_results
+    |> search()
+    |> extract_stuff_we_need()
+    |> display_results()
   end
 
   private do
@@ -63,5 +63,27 @@ defmodule Mix.Tasks.Template.Hex do
     defp indent(string) do
       "    #{String.replace(string, "\n", "\n    ") |> String.trim_trailing}\n"
     end
+
+
+    # hex changed the internal API in fall 2017, so we have to deal with both
+
+    require Hex.API.Package
+    
+    cond do
+      function_exported?(Hex.API.Package, :search, 1) ->
+        defdelegate search(package), to: Hex.API.Package
+        
+      function_exported?(Hex.API.Package, :search, 2) ->
+
+        defp search(package) do
+          url = Hex.State.fetch!(:api_url) <> "/"
+          Hex.API.Package.search(nil, package)
+        end
+
+      true ->
+        raise "Can't find Hex.API.Package.search/1 or /2"
+    end
+
+    
   end
 end

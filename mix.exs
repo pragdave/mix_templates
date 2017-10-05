@@ -2,7 +2,7 @@ defmodule MixTemplates.Mixfile do
   use Mix.Project
 
   @name    :mix_templates
-  @version "0.1.13"
+  @version "0.1.14"
   @deps [
     { :private, "> 0.0.0" },
     { :ex_doc,  "~> 0.14", only: :dev, runtime: false },
@@ -26,7 +26,7 @@ defmodule MixTemplates.Mixfile do
     [
       app:     @name,
       version: @version,
-      elixir:  "~> 1.4",
+      elixir:  ">= 1.4.0",
       deps:    @deps,
       package: package(),
       description:     @description,
@@ -49,7 +49,8 @@ defmodule MixTemplates.Mixfile do
       ],
       links: %{
         "GitHub" => "https://github.com/pragdave/mix_templates",
-      }
+      },
+      version: "0.2.0",
     ]
   end
 end
