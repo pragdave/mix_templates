@@ -24,20 +24,16 @@ defmodule MixTemplates.Mixfile do
   def project do
     in_production = Mix.env == :prod
      [
-      app:     "fred",
-      version: "1.2",
+      app:     @name,
+      version: @version,
       elixir:  ">= 1.4.0",
-      deps:    deps()
-     ]
+      deps:    @deps,
+      package: package(),
+      description:     @description,
+      build_embedded:  in_production,
+      start_permanent: in_production,
+    ]
   end
-  #     ,
-  #    ]
-  #     package: package(),
-  #     description:     @description,
-  #     build_embedded:  in_production,
-  #     start_permanent: in_production,
-  #   ]
-  # end
 
 
   defp package do
