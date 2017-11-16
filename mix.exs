@@ -2,7 +2,7 @@ defmodule MixTemplates.Mixfile do
   use Mix.Project
 
   @name    :mix_templates
-  @version "0.1.14"
+  @version "0.2.1"
   @deps [
     { :private, "> 0.0.0" },
     { :ex_doc,  "~> 0.14", only: :dev, runtime: false },
@@ -23,17 +23,21 @@ defmodule MixTemplates.Mixfile do
 
   def project do
     in_production = Mix.env == :prod
-    [
-      app:     @name,
-      version: @version,
+     [
+      app:     "fred",
+      version: "1.2",
       elixir:  ">= 1.4.0",
-      deps:    @deps,
-      package: package(),
-      description:     @description,
-      build_embedded:  in_production,
-      start_permanent: in_production,
-    ]
+      deps:    deps()
+     ]
   end
+  #     ,
+  #    ]
+  #     package: package(),
+  #     description:     @description,
+  #     build_embedded:  in_production,
+  #     start_permanent: in_production,
+  #   ]
+  # end
 
 
   defp package do
@@ -50,7 +54,7 @@ defmodule MixTemplates.Mixfile do
       links: %{
         "GitHub" => "https://github.com/pragdave/mix_templates",
       },
-      version: "0.2.0",
+      version: @version,
     ]
   end
 end
