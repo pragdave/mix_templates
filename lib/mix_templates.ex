@@ -716,7 +716,13 @@ defmodule MixTemplates do
       if name =~ ~r{\$\$PROJECT_NAME\$\$} do
         String.replace(name, "$$PROJECT_NAME$$", "$PROJECT_NAME$")
       else
-        String.replace(name, "$PROJECT_NAME$", assigns[:assigns][:project_name])
+        Enum.reduce(assigns[:assigns], name, fn
+          {key, value}, name when is_atom(value) or is_binary(value) or is_list(value) ->
+            String.replace(name, "$#{String.upcase(to_string(key))}$", to_string(value))
+
+          _assign, name ->
+            name
+        end)
       end
     end
 
