@@ -540,6 +540,10 @@ defmodule MixTemplates do
     throw(:ignore_file)
   end
 
+  def append_file_contents(opts \\ []) do
+    send(self(), {:append_file_contents, Enum.into(opts, %{})})
+  end
+
   private do
     defp check_existence_of(dir, name) do
       path = Path.join(dir, name)
@@ -614,9 +618,22 @@ defmodule MixTemplates do
     end
 
     defp copy_and_expand(source, dest, assigns) do
+      assigns =
+        Keyword.update!(assigns, :assigns, fn assigns ->
+          Keyword.merge(assigns, dest: dest)
+        end)
+
       try do
         content = EEx.eval_file(source, assigns, trim: true)
-        MG.create_file(dest, content)
+
+        receive do
+          {:append_file_contents, opts} ->
+            do_append(dest, content, opts)
+        after
+          0 ->
+            MG.create_file(dest, content)
+        end
+
         mode = File.stat!(source).mode
         File.chmod!(dest, mode)
       catch
@@ -631,6 +648,63 @@ defmodule MixTemplates do
             "(it isn't needed)"
           ])
       end
+    end
+
+    defp do_append(dest, content, %{end_tag: true}) do
+      without_closing_end_tag =
+        dest
+        |> File.read!()
+        |> String.replace(~r/end[\n\s]*$/, "")
+
+      content =
+        content
+        |> String.split("\n")
+        |> Enum.map(&prepend_str(&1, "  "))
+        |> Enum.join("\n")
+
+      content =
+        Enum.join([
+          without_closing_end_tag,
+          content,
+          "\nend\n"
+        ])
+
+      File.write!(dest, content)
+      Mix.shell().info([:yellow, "> injecting", :reset, " #{dest} "])
+    end
+
+    @deps_pattern ~r/defp deps do[\n\s]*\[(?<deps>.*)\][\n\s]*end/s
+
+    defp do_append(dest, content, %{deps: true}) do
+      existing = File.read!(dest)
+
+      %{"deps" => deps} = Regex.named_captures(@deps_pattern, existing)
+
+      content =
+        String.replace(existing, @deps_pattern, """
+        defp deps do
+          [
+            #{content}
+            #{deps}
+          ]
+        end
+        """)
+
+      File.write!(dest, content)
+      Mix.shell().info([:yellow, "> dependencies", " #{dest} "])
+    end
+
+    defp do_append(dest, content, _opts) do
+      File.write!(dest, content, [:append])
+      Mix.shell().info([:yellow, "> appending", :reset, " #{dest} "])
+    end
+
+    defp prepend_str(str, _chars) when str == "" do
+      str
+    end
+
+    defp prepend_str(str, chars) do
+      chars <> str
     end
 
     defp mandatory_option(nil, msg), do: raise(CompileError, description: msg)
