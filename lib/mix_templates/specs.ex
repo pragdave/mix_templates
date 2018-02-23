@@ -1,6 +1,5 @@
 defmodule MixTemplates.Specs do
-
-  alias  MixTemplates.Cache
+  alias MixTemplates.Cache
 
   @doc """
   Extra the specs (command line options that this template uses) from a
@@ -14,6 +13,4 @@ defmodule MixTemplates.Specs do
       template.options() ++ base_option_specs
     end
   end
-
-
 end

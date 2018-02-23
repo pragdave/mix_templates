@@ -1,48 +1,39 @@
 defmodule Mix.Tasks.Template.Install do
-
-  @moduledoc(
-    Path.join([__DIR__, "../../../README.md"])
-    |> File.read!
-    |> String.replace(~r/\A.*^### Use\s+/ms, "")
-    |> String.replace(~r/^###.*/ms, ""))
-
-
+  @moduledoc Path.join([__DIR__, "../../../README.md"])
+             |> File.read!()
+             |> String.replace(~r/\A.*^### Use\s+/ms, "")
+             |> String.replace(~r/^###.*/ms, "")
 
   defmodule TargetTemplate do
-
     @moduledoc """
     Define naming conventions for template targets
     """
-    
+
     def name_for(project) do
       project[:app]
       |> to_string()
     end
 
     def path_for() do
-      Path.join(Mix.Utils.mix_home, "templates")
+      Path.join(Mix.Utils.mix_home(), "templates")
     end
 
     def printable_name() do
-      { "template", "templates" }
+      {"template", "templates"}
     end
 
     def task_name(), do: "template"
   end
 
-
-  use    Private
-  use    Mix.Task
-  alias  MixTemplates.Cache
-
+  use Private
+  use Mix.Task
+  alias MixTemplates.Cache
 
   @doc nil
-  @spec run(OptionParser.argv) :: boolean
+  @spec run(OptionParser.argv()) :: boolean
   def run(argv) do
     install(argv, [])
   end
-
-
 
   def install(argv, switches) do
     {opts, args} = OptionParser.parse!(argv, strict: switches)
@@ -50,13 +41,13 @@ defmodule Mix.Tasks.Template.Install do
 
     install_spec =
       case parse_args(args, opts) do
-        {:error, message} -> Mix.raise message <> "\n" <> usage()
-        install_spec      -> install_spec
+        {:error, message} -> Mix.raise(message <> "\n" <> usage())
+        install_spec -> install_spec
       end
 
     case check_install_spec(install_spec, opts) do
-      :ok               -> :noop
-      {:error, message} -> Mix.raise message <> "\n" <> usage()
+      :ok -> :noop
+      {:error, message} -> Mix.raise(message <> "\n" <> usage())
     end
 
     case install_spec do
@@ -76,38 +67,49 @@ defmodule Mix.Tasks.Template.Install do
 
   defp install_from({:fetcher, dep_spec}, opts, switches) do
     if opts[:sha512] do
-      Mix.raise "--sha512 is not supported for template.install from git/github/hex\n" <> usage()
+      Mix.raise("--sha512 is not supported for template.install from git/github/hex\n" <> usage())
     end
 
     try do
-      fetch dep_spec, fn mixfile ->
+      fetch(dep_spec, fn mixfile ->
         build(mixfile)
         argv = if opts[:force], do: ["--force"], else: []
         install(argv, switches)
-      end
+      end)
     rescue
       e in Mix.Error ->
         if String.starts_with?(e.message, "No package with name ") do
-          { _, _, [hex: name]} = dep_spec
+          {_, _, [hex: name]} = dep_spec
 
           if not String.starts_with?(to_string(name), "gen_template_") do
-            Mix.shell.info([
+            Mix.shell().info([
               "\nI can't find a template called #{name} in hex.\n\nPerhaps you meant ",
-              :green, "gen_template_#{name}", :reset, "?\n"])
+              :green,
+              "gen_template_#{name}",
+              :reset,
+              "?\n"
+            ])
           end
         end
-      raise e
+
+        raise e
     end
   end
 
   defp install_from_local(src) do
     case Cache.install_from_local_tree(src) do
-      { :error, reason } ->
+      {:error, reason} ->
         Mix.raise(reason)
-      { :ok, template_name } ->
-        Mix.shell.info(["template ",
-                        :green, "#{template_name}",
-                        :reset, " installed successfully"])
+
+      {:ok, template_name} ->
+        Mix.shell().info([
+          "template ",
+          :green,
+          "#{template_name}",
+          :reset,
+          " installed successfully"
+        ])
+
         :ok
     end
   end
@@ -127,7 +129,6 @@ defmodule Mix.Tasks.Template.Install do
     :ok
   end
 
-
   @doc """
   Returns a list of already installed version of the same archive or escript.
   """
@@ -139,7 +140,7 @@ defmodule Mix.Tasks.Template.Install do
   For installs involving a `fetch`, this will be executed as the `in_package`.
   """
   def build(_) do
-    IO.puts "Project contains: #{inspect Path.wildcard("*")}"
+    IO.puts("Project contains: #{inspect(Path.wildcard("*"))}")
   end
 
   defp usage() do
@@ -147,8 +148,8 @@ defmodule Mix.Tasks.Template.Install do
   end
 
   defp do_install(name, src, opts) do
-    src_basename   = Path.basename(URI.parse(src).path)
-    dst            = Path.join(Mix.Local.path_for(name), src_basename)
+    src_basename = Path.basename(URI.parse(src).path)
+    dst = Path.join(Mix.Local.path_for(name), src_basename)
     previous_files = find_previous_versions(src, dst)
 
     if opts[:force] || should_install?(name, src, previous_files) do
@@ -158,18 +159,18 @@ defmodule Mix.Tasks.Template.Install do
           :ok
 
         :badpath ->
-          Mix.raise """
-          Expected #{inspect src} to be a URL or a local file path.
+          Mix.raise("""
+          Expected #{inspect(src)} to be a URL or a local file path.
           Perhaps you meant
 
               “mix template install hex #{src}”
-          """
+          """)
 
         {:local, message} ->
-          Mix.raise message
+          Mix.raise(message)
 
         {kind, message} when kind in [:remote, :checksum] ->
-          Mix.raise """
+          Mix.raise("""
           #{message}
 
           Could not fetch #{name} at:
@@ -179,7 +180,7 @@ defmodule Mix.Tasks.Template.Install do
           Please download the #{name} above manually to your current directory and run:
 
               mix #{name}.install ./#{src_basename}
-          """
+          """)
       end
 
       true
@@ -189,17 +190,21 @@ defmodule Mix.Tasks.Template.Install do
   end
 
   defp should_install?(name, src, previous_files) do
-    message = case previous_files do
-      [] ->
-        "Are you sure you want to install #{name} #{inspect src}?"
-      [file] ->
-        "Found existing #{name}: #{file}.\n" <>
-        "Are you sure you want to replace it with #{inspect src}?"
-      files ->
-        "Found existing #{name}s: #{Enum.map_join(files, ", ", &Path.basename/1)}.\n" <>
-        "Are you sure you want to replace them with #{inspect src}?"
-    end
-    Mix.shell.yes?(message)
+    message =
+      case previous_files do
+        [] ->
+          "Are you sure you want to install #{name} #{inspect(src)}?"
+
+        [file] ->
+          "Found existing #{name}: #{file}.\n" <>
+            "Are you sure you want to replace it with #{inspect(src)}?"
+
+        files ->
+          "Found existing #{name}s: #{Enum.map_join(files, ", ", &Path.basename/1)}.\n" <>
+            "Are you sure you want to replace them with #{inspect(src)}?"
+      end
+
+    Mix.shell().yes?(message)
   end
 
   @doc """
@@ -213,15 +218,19 @@ defmodule Mix.Tasks.Template.Install do
 
   def parse_args([url_or_path], _opts) do
     cond do
-      local_dir?(url_or_path) -> {:local, url_or_path}
-      file_url?(url_or_path)  -> {:url, url_or_path}
-      true -> {
-        :error,
-        """
-        Expected a local file path or a file URL. Perhaps you meant:
+      local_dir?(url_or_path) ->
+        {:local, url_or_path}
 
-            mix template.install hex #{url_or_path}
-        """}
+      file_url?(url_or_path) ->
+        {:url, url_or_path}
+
+      true ->
+        {:error,
+         """
+         Expected a local file path or a file URL. Perhaps you meant:
+
+             mix template.install hex #{url_or_path}
+         """}
     end
   end
 
@@ -242,6 +251,7 @@ defmodule Mix.Tasks.Template.Install do
 
       git_config ->
         git_opts = git_config ++ [git: url, submodules: opts[:submodules]]
+
         app_name =
           if opts[:app] do
             opts[:app]
@@ -291,51 +301,54 @@ defmodule Mix.Tasks.Template.Install do
   of installed archives, escripts, and so on. The first parameter is
   the Mix.Local.Target module of the type of items.
   """
-  @spec print_list(atom, [String.t]) :: :ok
+  @spec print_list(atom, [String.t()]) :: :ok
   def print_list(target, []) do
     {_name, names} = target.printable_name()
-    Mix.shell.info "No #{names} currently installed."
+    Mix.shell().info("No #{names} currently installed.")
   end
 
   def print_list(target, items) do
     {_name, names} = target.printable_name()
-    Enum.each items, fn item -> Mix.shell.info ["* ", item] end
+    Enum.each(items, fn item -> Mix.shell().info(["* ", item]) end)
     item_names = String.capitalize(names)
-    Mix.shell.info "#{item_names} installed at: #{Mix.Local.path_for(target)}"
+    Mix.shell().info("#{item_names} installed at: #{Mix.Local.path_for(target)}")
   end
 
   @doc """
   A common implementation for uninstalling archives and scripts.
   """
-  @spec uninstall(atom, OptionParser.argv) :: boolean
+  @spec uninstall(atom, OptionParser.argv()) :: boolean
   def uninstall(target, argv) do
     {_, argv, _} = OptionParser.parse(argv)
 
-    { item_name, item_names } = target.printable_name()
+    {item_name, item_names} = target.printable_name()
 
     root = Mix.Local.path_for(target)
 
     if name = List.first(argv) do
       path = Path.join(root, name)
+
       cond do
         not File.exists?(path) ->
-          Mix.shell.error("Could not find a local #{item_name} named #{inspect name}.")
-          Mix.shell.info("Existing #{item_names} are:")
-          Mix.Task.run item_name
+          Mix.shell().error("Could not find a local #{item_name} named #{inspect(name)}.")
+          Mix.shell().info("Existing #{item_names} are:")
+          Mix.Task.run(item_name)
           nil
+
         should_uninstall?(path, item_name) ->
           File.rm_rf!(path)
           path
+
         true ->
           nil
       end
     else
-      Mix.raise "No #{item_name} was given to #{item_name}.uninstall"
+      Mix.raise("No #{item_name} was given to #{item_name}.uninstall")
     end
   end
 
   defp should_uninstall?(path, item_name) do
-    Mix.shell.yes?("Are you sure you want to uninstall #{item_name} #{path}?")
+    Mix.shell().yes?("Are you sure you want to uninstall #{item_name} #{path}?")
   end
 
   @doc """
@@ -349,37 +362,38 @@ defmodule Mix.Tasks.Template.Install do
   package's config overridden with the deps_path and lockfile of the fetcher
   package. Also, the Mix env is set to :prod.
   """
-  @spec fetch(tuple, ((atom) -> any), ((atom) -> any)) :: any
+  @spec fetch(tuple, (atom -> any), (atom -> any)) :: any
   def fetch(dep_spec, in_fetcher \\ &in_fetcher/1, in_package) do
-    with_tmp_dir fn tmp_path ->
+    with_tmp_dir(fn tmp_path ->
       File.mkdir_p!(tmp_path)
 
-      File.write! Path.join(tmp_path, "mix.exs"), """
+      File.write!(Path.join(tmp_path, "mix.exs"), """
       defmodule Mix.Local.Installer.Fetcher.Mixfile do
         use Mix.Project
 
         def project do
           [app: Mix.Local.Installer.Fetcher,
            version: "1.0.0",
-           deps: [#{inspect dep_spec}]]
+           deps: [#{inspect(dep_spec)}]]
         end
       end
-      """
+      """)
 
-      with_mix_env_prod fn ->
+      with_mix_env_prod(fn ->
         Mix.Project.in_project(Mix.Local.Installer.Fetcher, tmp_path, in_fetcher)
 
         package_name = elem(dep_spec, 0)
         package_name_string = Atom.to_string(package_name)
         package_path = Path.join([tmp_path, "deps", package_name_string])
+
         post_config = [
           deps_path: Path.join(tmp_path, "deps"),
           lockfile: Path.join(tmp_path, "mix.lock")
         ]
 
         Mix.Project.in_project(package_name, package_path, post_config, in_package)
-      end
-    end
+      end)
+    end)
   after
     :code.purge(Mix.Local.Installer.Fetcher)
     :code.delete(Mix.Local.Installer.Fetcher)

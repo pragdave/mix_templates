@@ -1,10 +1,8 @@
 defmodule Mix.Tasks.Template do
-
-  @moduledoc(
-    Path.join([__DIR__, "../../../README.md"])
-    |> File.read!
-    |> String.replace(~r/\A.*^### Use\w+/ms, "")
-    |> String.replace(~r/^###.*/ms, ""))
+  @moduledoc Path.join([__DIR__, "../../../README.md"])
+             |> File.read!()
+             |> String.replace(~r/\A.*^### Use\w+/ms, "")
+             |> String.replace(~r/^###.*/ms, "")
 
   use Private
   use Mix.Task
@@ -13,7 +11,7 @@ defmodule Mix.Tasks.Template do
 
   @doc nil
   def run([]) do
-      Cache.display_list_of_templates()
+    Cache.display_list_of_templates()
   end
 
   def run([template_name]), do: run([template_name, "--help"])
@@ -24,5 +22,4 @@ defmodule Mix.Tasks.Template do
     |> Cache.find_template()
     |> Cache.display_template_info(:long)
   end
-
 end
