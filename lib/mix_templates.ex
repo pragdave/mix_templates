@@ -673,27 +673,6 @@ defmodule MixTemplates do
       Mix.shell().info([:yellow, "> injecting", :reset, " #{dest} "])
     end
 
-    @deps_pattern ~r/defp deps do[\n\s]*\[(?<deps>.*)\][\n\s]*end/s
-
-    defp do_append(dest, content, %{deps: true}) do
-      existing = File.read!(dest)
-
-      %{"deps" => deps} = Regex.named_captures(@deps_pattern, existing)
-
-      content =
-        String.replace(existing, @deps_pattern, """
-        defp deps do
-          [
-            #{content}
-            #{deps}
-          ]
-        end
-        """)
-
-      File.write!(dest, content)
-      Mix.shell().info([:yellow, "> dependencies", " #{dest} "])
-    end
-
     defp do_append(dest, content, _opts) do
       File.write!(dest, content, [:append])
       Mix.shell().info([:yellow, "> appending", :reset, " #{dest} "])
