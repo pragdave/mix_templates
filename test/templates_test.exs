@@ -84,14 +84,14 @@ defmodule TemplatesTest do
   end
   
   test "merging projects not supported" do
-    dummy_assigns = %{ assigns: %{}}
+    dummy_assigns = %{ assigns: []}
     assert { :error, msg } = MT.create_or_merge({:maybe_update, "a"}, "b", dummy_assigns)
     assert msg == "Updating an existing project is not yet supported"
   end
   
   
   test "can copy a file and expand the content" do
-    assigns = %{ one: "number 1", two: "deux" }
+    assigns = [one: "number 1", two: "deux"]
     source  = "_in"
     dest    = "_out"
     File.write!(source, "first: <%= @one %>\nsecond: <%= @two %>")
@@ -103,7 +103,7 @@ defmodule TemplatesTest do
   end
   
   test "renames a target file if its name is $PROJECT_NAME$" do
-    assigns = %{ one: "number 1", two: "deux", project_name: "fred" }
+    assigns = [one: "number 1", two: "deux", project_name: "fred"]
     source  = Path.join([__DIR__, "data/tree1/$PROJECT_NAME$"])
     dest    = "_out"
     MT.copy_dir(source, dest, assigns: assigns)
