@@ -216,6 +216,7 @@ defmodule MixTemplates do
 
       @target_dir                 the project directory is created in this
       @target_subdir              the project directory is called this
+      @dest                       the file path of the destination file
 
 
   ### Handling Command Line Parameters
@@ -325,8 +326,6 @@ defmodule MixTemplates do
   ]
   ~~~
 
-
-
   ### Dealing with optional files and directories
 
   Sometimes you need to include a file or directory only if some condition
@@ -355,6 +354,52 @@ defmodule MixTemplates do
   Sometimes you just need to skip a single file if some condition is true. Use this helper:
 
   * `MixTemplates.ignore_file_unless(«condition»)`
+
+  ### Injecting into existing files
+
+  When updating an existing project, (using `--force`) you may expect a file
+  to already exist. For example, you might expect `config/config.exs` to
+  already exist, in which case you wish to append some lines to the end.
+
+  You can do this by creating a file in
+  `lib/template/$PROJECT_NAME/config/config.exs`:
+
+      <% if File.exists?(@dest), do: MixTemplates.append_file_contents() %>
+      
+      config :<%= @project_name %>, hello: "world"
+
+  The `append_file_contents` function will cause the contents of the file to
+  be appended. If you wish to append to a file which contains an Elixir
+  module, inside the closing `end` tag, you should add the `end_tag: true`
+  option:
+
+      <% MixTemplates.append_file_contents(end_tag: true) %>
+
+      def appended_function do
+        # ...
+      end
+
+  This will cause the method in the file to be appended to the module if it
+  exists. You can use this to create a template which will create or update
+  a module:
+
+      <%= if File.exists?(@dest) do %>
+        <% MixTemplates.append_file_contents(end_tag: true)
+      <% else %>
+      defmodule <%= @project_name_camel_case %>.MyModule do
+      <% end %>
+
+        def my_function do
+          :my_result
+        end
+
+      <%= if File.exists?(@dest) do %>
+      end
+      <% end %>
+
+  The `File.exists?` checks will ensure that the `defmodule` and `end` lines
+  are only included in the final output if the destination file does not
+  exist yet.
 
   ### Cleaning Up
 
