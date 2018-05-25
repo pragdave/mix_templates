@@ -80,5 +80,5 @@ Apache 2.0. See [LICENSE.md](LICENSE.md) for details.
 
 ### See also
 
-For information on writing your own templates, see the moduledoc for MixTemplate,
+For information on writing your own templates, see the moduledoc for [MixTemplates](lib/mix_templates.ex),
 also in this package.
