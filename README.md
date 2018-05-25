@@ -76,7 +76,7 @@ of how to use these templates.
 
 ### License
 
-Apache 2.0. See LICENSE.md for details.
+Apache 2.0. See [LICENSE.md](LICENSE.md) for details.
 
 ### See also
 
