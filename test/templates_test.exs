@@ -112,4 +112,11 @@ defmodule TemplatesTest do
     
     File.rm_rf!(dest)
    end
+
+   test "Cache.name_is_path?/1 catches projects named as paths" do
+     assert Cache.name_is_path?("../../.")
+     assert Cache.name_is_path?("/")
+     assert Cache.name_is_path?("/home")
+     assert not Cache.name_is_path?("my_template_project")
+   end
 end

@@ -40,16 +40,17 @@ defmodule MixTemplates.Cache do
   """
 
   def install_from_local_tree(source) do
-    if is_template?(source) do
-      module = load_template_module(source)
-      name   = module.name
-      target = template_path(name)
-      File.rm_rf!(target)
+    with true <- is_template?(source),
+         module <- load_template_module(source),
+         name <- module.name,
+         false <- name |> to_string() |> name_is_path?(),
+         target <- template_path(name) do
+      if File.dir?(target), do: File.rm_rf!(target)
       File.mkdir_p!(target)
       File.cp_r!(source, target)
       { :ok, name }
     else
-      { :error, "“#{source}” does not contain a valid template" }
+      _ -> { :error, "“#{source}” does not contain a valid template" }
     end
   end
 
@@ -247,6 +248,9 @@ defmodule MixTemplates.Cache do
     defp error(message) do
       Mix.shell.info([ :red, "ERROR: ", :reset, message ])
     end
+
+    def name_is_path?("/" <> _), do: true
+    def name_is_path?(name), do: Path.absname(name) != Path.expand(name)
   end
 
 
@@ -262,7 +266,6 @@ defmodule MixTemplates.Cache do
       Mix.shell.error("#{name} is not a locally installed template. Use `mix template list` to get a list")
     end
   end
-
 
 
 end
