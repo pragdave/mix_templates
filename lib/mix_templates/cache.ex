@@ -44,6 +44,7 @@ defmodule MixTemplates.Cache do
       module = load_template_module(source)
       name   = module.name
       target = template_path(name)
+      File.rm_rf!(target)
       File.mkdir_p!(target)
       File.cp_r!(source, target)
       { :ok, name }
