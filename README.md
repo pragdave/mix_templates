@@ -1,5 +1,7 @@
-# Mix Template—a package for creating customized directory trees
+# Mix Template—create customized directory trees
 
+The templating package that allows you to create custom
+directory trees for your Elixir project.
 
 Manage the local installation and uninstallation of templates used
 by `mix gen`.
@@ -7,11 +9,11 @@ by `mix gen`.
 ### Install
 
     $ mix archive.install hex mix_templates
-    
+
 You probably also need to install the generator:
 
     $ mix archive.install hex mix_generator
-    
+
 
 ### Use
 
@@ -68,15 +70,15 @@ Details for each individual task can be found using `mix help template`,
 `mix help tmplate.hex` and so on.
 
 See `Mix.Tasks.Gen` (in project
-[:mix_generator](https://github.com/pragdave/mix_generator)) for details 
+[:mix_generator](https://github.com/pragdave/mix_generator)) for details
 of how to use these templates.
 
 
 ### License
 
-Apache 2.0. See LICENSE.md for details.
+Apache 2.0. See [LICENSE.md](LICENSE.md) for details.
 
 ### See also
 
-For information on writing your own templates, see the moduledoc for MixTemplate,
+For information on writing your own templates, see the moduledoc for [MixTemplates](lib/mix_templates.ex),
 also in this package.
