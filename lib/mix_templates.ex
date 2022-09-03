@@ -690,10 +690,10 @@ end
                           :faint, :red, "(unexpected binary file. ",
                           "See the \"just_files\" option)"])
           {:error, :unexpected_binary}
-        _ ->
+        other ->
           Mix.shell.error([:red, "- ignoring",
                           :reset, " #{dest} ",
-                          :faint, :red, "(unhandled error generating file)"])
+                          :faint, :red, "(unhandled error generating file:\n\t#{inspect other})"])
           {:error, :unhandled}
       end
     end
