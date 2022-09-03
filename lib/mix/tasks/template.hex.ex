@@ -76,7 +76,7 @@ defmodule Mix.Tasks.Template.Hex do
       function_exported?(Hex.API.Package, :search, 2) ->
 
         defp search(package) do
-          url = Hex.State.fetch!(:api_url) <> "/"
+          # url = Hex.State.fetch!(:api_url) <> "/"
           Hex.API.Package.search(nil, package)
         end
 

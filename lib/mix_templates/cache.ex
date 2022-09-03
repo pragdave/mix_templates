@@ -117,7 +117,7 @@ defmodule MixTemplates.Cache do
       |> Path.join("lib/*.ex")
       |> Path.wildcard
       |> hd
-      |> Code.load_file
+      |> Code.compile_file()
       |> hd
       |> elem(0)
     end)

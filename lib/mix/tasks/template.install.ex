@@ -56,7 +56,7 @@ defmodule Mix.Tasks.Template.Install do
 
     case check_install_spec(install_spec, opts) do
       :ok               -> :noop
-      {:error, message} -> Mix.raise message <> "\n" <> usage()
+      # {:error, message} -> Mix.raise message <> "\n" <> usage()
     end
 
     case install_spec do
@@ -70,7 +70,8 @@ defmodule Mix.Tasks.Template.Install do
         do_install(target, src, opts)
 
       :project ->
-        install_from_local(System.cwd())
+        { :ok, cwd } = File.cwd()
+        install_from_local(cwd)
     end
   end
 
@@ -148,7 +149,8 @@ defmodule Mix.Tasks.Template.Install do
 
   defp do_install(name, src, opts) do
     src_basename   = Path.basename(URI.parse(src).path)
-    dst            = Path.join(Mix.Local.path_for(name), src_basename)
+    # dst            = Path.join(Mix.Local.path_for(name), src_basename)
+    dst            = src_basename
     previous_files = find_previous_versions(src, dst)
 
     if opts[:force] || should_install?(name, src, previous_files) do
@@ -301,7 +303,7 @@ defmodule Mix.Tasks.Template.Install do
     {_name, names} = target.printable_name()
     Enum.each items, fn item -> Mix.shell.info ["* ", item] end
     item_names = String.capitalize(names)
-    Mix.shell.info "#{item_names} installed at: #{Mix.Local.path_for(target)}"
+    Mix.shell.info "#{item_names} installed at: #{target}"
   end
 
   @doc """
@@ -313,10 +315,10 @@ defmodule Mix.Tasks.Template.Install do
 
     { item_name, item_names } = target.printable_name()
 
-    root = Mix.Local.path_for(target)
+    root = target
 
     if name = List.first(argv) do
-      path = Path.join(root, name)
+      path = Path.join([root, name])
       cond do
         not File.exists?(path) ->
           Mix.shell.error("Could not find a local #{item_name} named #{inspect name}.")

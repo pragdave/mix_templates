@@ -17,10 +17,15 @@ defmodule MixTemplates.Docs do
 
     def get_docs(is_elixir?, module) when is_elixir? do
       module
-      |> Code.get_docs(:moduledoc)
+      |> Code.fetch_docs()
+      |> extract_module_docs()
       |> format_docs
     end
     def get_docs(_, _), do: IO.puts "no docs"
+    
+    def extract_module_docs({:docs_v1, _, :elixir, _, %{"en" => module_docs}, _, _}) do
+      module_docs
+    end
 
     def format_docs({_, docs}) when is_binary(docs) do
       IO.puts docs

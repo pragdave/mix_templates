@@ -8,6 +8,11 @@ defmodule MixTemplates.Mixfile do
     { :ex_doc,  "~> 0.14", only: :dev, runtime: false },
   ]
 
+  @extra_applications [
+    :crypto,
+    :eex,
+    :hex,
+  ]
   @description """
   A modular, open templating system, designed for use with `mix gen`.
 
@@ -35,6 +40,11 @@ defmodule MixTemplates.Mixfile do
     ]
   end
 
+  def application do
+    [
+      extra_applications: @extra_applications,
+    ] 
+  end
 
   defp package do
     [
